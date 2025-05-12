@@ -1,131 +1,81 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PinListScreen } from './components/PinListScreen';
+import { AddPinScreen } from './components/AddPinScreen';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { MMKV } from 'react-native-mmkv';
+import SettingsScreen from './components/SettingsScreen';
+import { LoginScreen } from './components/LoginScreen';
+import messaging from '@react-native-firebase/messaging';
+import {Alert, PermissionsAndroid} from 'react-native';
+import { RegisterScreen } from './components/RegisterScreen';
+import { MapScreen } from './components/MapScreen';
+import PinDetailScreen from './components/PinDetailScreen';
+import SplashScreen from './components/SplashScreen';
+import OnboardingScreen from './components/OnboardingScreen';
+import { EditPinScreen } from './components/EditPinScreen';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+///https://nominatim.openstreetmap.org/search?format=json&q=Koro%C5%A1ka+cesta+46,+Maribor,+Slovenia
+export const storage = new MMKV();
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function PinStack() {
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+    <Stack.Navigator>
+      <Stack.Screen name="PinList" component={PinListScreen} />
+      <Stack.Screen name="PinDetail" component={PinDetailScreen} />
+      <Stack.Screen name="PinEdit" component={EditPinScreen} />
+    </Stack.Navigator>
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the reccomendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
+function MapStack() {
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <Stack.Navigator>
+      <Stack.Screen name="Map" component={MapScreen} />
+      <Stack.Screen name="PinDetail" component={PinDetailScreen} />
+    </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+
+function TabNav() {
+  return (
+    <Tab.Navigator >
+      <Tab.Screen name="Map" component={MapStack}  options={{ headerShown: false }} />   
+      <Tab.Screen name="Pin list" component={PinStack}  options={{ headerShown: false }} />
+      <Tab.Screen name="Add pin" component={AddPinScreen}  options={{ headerShown: false }} />
+      <Tab.Screen name="Settings" component={SettingsScreen}  options={{ headerShown: false }}/>
+    </Tab.Navigator>
+  );
+}
+
+const App: React.FC = () => {
+
+  useEffect(() => {
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    const unsubscribe = messaging().onMessage(async (remoteMessage) => {
+      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName={'SplashScreen'}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="TabNav" component={TabNav} options={{ headerShown: false }} />
+        <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="OnboardingScreen" component={OnboardingScreen} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 export default App;

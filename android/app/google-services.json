@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "232962449072",
+    "project_id": "tzva-4a21d",
+    "storage_bucket": "tzva-4a21d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:232962449072:android:294743a8d841d1510ba575",
+        "android_client_info": {
+          "package_name": "com.vaja1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhbZ7YdDPzmfK0XzT31yvA46wGM3zgM5g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
