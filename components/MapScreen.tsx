@@ -1,16 +1,92 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Text,
+  Image,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
-import { requestLocationPermission } from './LocationUtils';
-import { Pin } from './Type';
 import firestore from '@react-native-firebase/firestore';
 import GetLocation from 'react-native-get-location';
+import { requestLocationPermission } from './LocationUtils';
+import {
+  notifyNearestEvent,
+  cancelNearestEventNotification,
+} from './NotificationService';
 
-export const MapScreen = () => {
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+type Pin = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  street: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  userId: string;
+  review: string;
+  createdAt: Date;
+  image?: string;
+};
+
+const getDistance = (loc1: Coordinates, loc2: Coordinates): number => {
+  const R = 6371e3;
+  const toRad = (deg: number) => deg * (Math.PI / 180);
+  const dLat = toRad(loc2.latitude - loc1.latitude);
+  const dLng = toRad(loc2.longitude - loc1.longitude);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(loc1.latitude)) *
+      Math.cos(toRad(loc2.latitude)) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const getNearestPinWithinRadius = (
+  userLocation: Coordinates,
+  pins: Pin[],
+  maxDistanceMeters: number
+): Pin | null => {
+  let nearest: Pin | null = null;
+  let minDistance = Infinity;
+
+  for (const pin of pins) {
+    const distance = getDistance(userLocation, pin);
+    console.log(`Checking pin "${pin.title}" at [${pin.latitude}, ${pin.longitude}]`);
+    console.log(`Distance to user: ${Math.round(distance)} meters`);
+
+    if (distance <= maxDistanceMeters && distance < minDistance) {
+      nearest = pin;
+      minDistance = distance;
+    }
+  }
+
+  if (nearest) {
+    console.log(`✅ Nearest pin in range: "${nearest.title}" (${Math.round(minDistance)}m)`);
+  } else {
+    console.log('❌ No pins found within 1km radius.');
+  }
+
+  return nearest;
+};
+
+const MapScreen = () => {
   const [pins, setPins] = useState<Pin[]>([]);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [location, setLocation] = useState<Coordinates | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activePin, setActivePin] = useState<Pin | null>(null);
+  const notificationShown = useRef<string | null>(null);
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -23,16 +99,12 @@ export const MapScreen = () => {
   }, []);
 
   useEffect(() => {
-    GetLocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 15000,
-    })
-      .then(loc => {
-        setLocation({ latitude: loc.latitude, longitude: loc.longitude });
-      })
-      .catch(error => {
-        console.error('Error getting location:', error);
-        setError('Failed to retrieve location.');
+    GetLocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+      .then(loc =>
+        setLocation({ latitude: loc.latitude, longitude: loc.longitude })
+      )
+      .catch(() => {
+        Alert.alert('Error', 'Failed to retrieve location.');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -42,28 +114,79 @@ export const MapScreen = () => {
       .collection('pins')
       .where('review', '==', 'approved')
       .onSnapshot(snapshot => {
-        if (!snapshot || snapshot.empty) return;
-        const pinList: Pin[] = snapshot.docs.map(doc => {
-          const pin = doc.data();
-          return {
-            id: doc.id,
-            title: pin.title,
-            description: pin.description,
-            category: pin.category,
-            street: pin.street,
-            userId: pin.userId,
-            city: pin.city,
-            longitude: pin.longitude,
-            latitude: pin.latitude,
-            review: pin.review,
-            createdAt: pin.createdAt ? pin.createdAt.toDate() : new Date(),
-            image: pin.image,
-          };
-        });
-        setPins(pinList);
+        if (!snapshot.empty) {
+          const pinList: Pin[] = snapshot.docs.map(doc => {
+            const pin = doc.data();
+            return {
+              id: doc.id,
+              title: pin.title,
+              description: pin.description,
+              category: pin.category,
+              street: pin.street,
+              city: pin.city,
+              latitude: Number(pin.latitude), // ✅ ensure numeric
+              longitude: Number(pin.longitude), // ✅ ensure numeric
+              userId: pin.userId,
+              review: pin.review,
+              createdAt: pin.createdAt?.toDate() || new Date(),
+              image: pin.image,
+            };
+          });
+          setPins(pinList);
+        }
       });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!pins.length) return;
+
+      GetLocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+        .then(loc => {
+          const userLoc = { latitude: loc.latitude, longitude: loc.longitude };
+          setLocation(userLoc);
+
+          const nearest = getNearestPinWithinRadius(userLoc, pins, 1000); // 1km
+
+          if (nearest) {
+            setActivePin(nearest);
+            if (notificationShown.current !== nearest.id) {
+              notifyNearestEvent(nearest);
+              notificationShown.current = nearest.id;
+            }
+          } else {
+            setActivePin(null);
+            if (notificationShown.current) {
+              cancelNearestEventNotification();
+              notificationShown.current = null;
+            }
+          }
+        })
+        .catch(() => {});
+    }, 5000); // ⏱️ Reduced for testing
+
+    return () => clearInterval(interval);
+  }, [pins]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
   if (loading || !location) {
@@ -75,73 +198,116 @@ export const MapScreen = () => {
   }
 
   const pinsData = JSON.stringify(pins);
-  const userLat = location.latitude;
-  const userLng = location.longitude;
+  const { latitude, longitude } = location;
 
-const mapHtml = `
-  <html>
-    <head>
+  const mapHtml = `
+    <html><head>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
       <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    </head>
-    <body style="margin:0; padding:0; height:100%;">
-      <div id="map" style="height:100%;"></div>
+    </head><body style="margin:0;height:100%"><div id="map" style="height:100%"></div>
       <script>
-        var map = L.map('map').setView([${userLat.toFixed(4)}, ${userLng.toFixed(4)}], 14);
+        var map = L.map('map').setView([${latitude}, ${longitude}], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        L.marker([${userLat.toFixed(4)}, ${userLng.toFixed(4)}]).addTo(map)
-          .bindPopup("You are here")
-          .openPopup();
+        L.marker([${latitude}, ${longitude}]).addTo(map).bindPopup("You are here").openPopup();
+        L.circle([${latitude}, ${longitude}], {
+          color: 'red',
+          fillColor: '#f03',
+          fillOpacity: 0.2,
+          radius: 1000
+        }).addTo(map);
 
         function addMarkers(pins) {
           pins.forEach(pin => {
-            let popupContent = '<strong>' + pin.title + '</strong><br>';
-            popupContent += '<p>' + pin.description + '</p>';
-            popupContent += '<p><strong>Location:</strong> ' + pin.street + ', ' + pin.city + '</p>';
-            popupContent += '<p><strong>Category:</strong> ' + pin.category + '</p>';
-            if (pin.image) {
-              popupContent += '<img src="' + pin.image + '" alt="Pin Image" style="width:100px;height:100px;">';
-            }
-            L.marker([pin.latitude, pin.longitude]).addTo(map)
-              .bindPopup(popupContent);
+            let html = '<b>' + pin.title + '</b><br>' + pin.description;
+            if (pin.image) html += '<br><img src="' + pin.image + '" style="width:100px">';
+            L.marker([pin.latitude, pin.longitude]).addTo(map).bindPopup(html);
           });
         }
-
         const pins = ${pinsData};
         addMarkers(pins);
       </script>
-    </body>
-  </html>
-`;
+    </body></html>
+  `;
 
   return (
     <View style={styles.container}>
+      {activePin && (
+        <Animated.View
+          style={[
+            styles.flashBanner,
+            {
+              opacity: pulseAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.4, 1],
+              }),
+            },
+          ]}
+        >
+          <Text style={styles.bannerTitle}>Accident Nearby</Text>
+          <Text style={styles.bannerDescription}>{activePin.title}</Text>
+          <Text style={styles.bannerDescription}>{activePin.description}</Text>
+          {activePin.image && (
+            <Image
+              source={{ uri: activePin.image }}
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
+          )}
+        </Animated.View>
+      )}
+
       <WebView
         originWhitelist={['*']}
         source={{ html: mapHtml }}
         style={styles.webview}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        geolocationEnabled={true}
-        onMessage={(event) => console.log('WebView Message:', event.nativeEvent.data)}
+        javaScriptEnabled
+        domStorageEnabled
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  webview: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  webview: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  flashBanner: {
+    right: 7,
+    position: 'absolute',
+    top: 20,
+    alignSelf: 'center',
+    width: '85%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'orange',
+    borderRadius: 12,
+    zIndex: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  bannerTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  bannerDescription: {
+    color: 'white',
+    fontSize: 14,
+  },
+  bannerImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    marginTop: 8,
   },
 });
 
