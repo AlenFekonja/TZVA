@@ -1,8 +1,14 @@
-import React, {useEffect} from 'react';
-import {View, Text, StyleSheet, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/types'; 
 
-export const SplashScreen: React.FC<any> = ({navigation}) => {
+type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SplashScreen'>;
+
+export const SplashScreen: React.FC = () => {
+  const navigation = useNavigation<SplashScreenNavigationProp>();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace('LoginScreen');
@@ -23,16 +29,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#2196F3',
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    width: 400,
+    height: 400,
+    resizeMode: 'contain',
   },
 });
 

@@ -1,15 +1,22 @@
-import React, {useEffect, useState} from 'react';
-import {Alert, Button, ScrollView, Text, TextInput, View} from 'react-native';
-import {Picker} from '@react-native-picker/picker';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  View,
+  StyleSheet,
+  Button,
+  Text,
+} from 'react-native';
+import { TextInput } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import {styles} from './Style';
 import TakePicture from './TakePicture';
-import {Pin} from './Type';
-import {getCoordsFromAddress, isInSlovenia} from './AddPinScreen';
+import { Pin } from './Type';
+import { getCoordsFromAddress, isInSlovenia } from './AddPinScreen';
 
-export const EditPinScreen: React.FC<any> = ({route, navigation}) => {
-  const {pin}: {pin: Pin} = route.params;
+export const EditPinScreen: React.FC<any> = ({ route, navigation }) => {
+  const { pin }: { pin: Pin } = route.params;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -20,6 +27,15 @@ export const EditPinScreen: React.FC<any> = ({route, navigation}) => {
   const [category, setCategory] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
   const [isUserAdmin, setIsUserAdmin] = useState<boolean | null>(null);
+
+  const inputTheme = {
+    colors: {
+      primary: '#000', // active border color
+      outline: '#000', // inactive border color
+      text: '#000',
+      placeholder: '#777',
+    },
+  };
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -78,29 +94,21 @@ export const EditPinScreen: React.FC<any> = ({route, navigation}) => {
 
   const handleUpdate = async () => {
     if (title === '' || description === '' || street === '' || city === '') {
-      Alert.alert(
-        'Empty input fields',
-        'Please enter values into all required fields.',
-      );
+      Alert.alert('Empty input fields', 'Please enter all required fields.');
       return;
     }
 
-    if (longitude == '' && latitude == '') {
+    if (longitude === '' && latitude === '') {
       const address = `${street},${city},Slovenia`;
-
       const coordinatesFetched = await handleGetCoordinates(address);
-
       if (!coordinatesFetched) {
-        Alert.alert(
-          'Invalid Address',
-          'Could not find valid coordinates for the provided address.',
-        );
+        Alert.alert('Invalid Address', 'Could not find coordinates.');
         return;
       }
     }
 
     if (!isInSlovenia(parseFloat(latitude), parseFloat(longitude))) {
-      Alert.alert('Invalid Address', 'Coordinates are not inside of Slovenia.');
+      Alert.alert('Invalid Address', 'Coordinates are outside Slovenia.');
       return;
     }
 
@@ -130,54 +138,101 @@ export const EditPinScreen: React.FC<any> = ({route, navigation}) => {
     <ScrollView>
       <TakePicture onImageTaken={setImageData} existingImage={imageData} />
       <View style={styles.container}>
-        <Text>City:</Text>
-        <TextInput style={styles.input} value={city} onChangeText={setCity} />
-        <Text>Street:</Text>
         <TextInput
+          label="City"
+          mode="outlined"
+          value={city}
+          onChangeText={setCity}
           style={styles.input}
+          theme={inputTheme}
+        />
+        <TextInput
+          label="Street"
+          mode="outlined"
           value={street}
           onChangeText={setStreet}
-        />
-        <Text>Longitude (optional):</Text>
-        <TextInput
           style={styles.input}
+          theme={inputTheme}
+        />
+        <TextInput
+          label="Longitude (optional)"
+          mode="outlined"
           value={longitude}
           onChangeText={setLongitude}
-        />
-        <Text>Latitude (optional):</Text>
-        <TextInput
+          keyboardType="numeric"
           style={styles.input}
+          theme={inputTheme}
+        />
+        <TextInput
+          label="Latitude (optional)"
+          mode="outlined"
           value={latitude}
           onChangeText={setLatitude}
-        />
-        <Text>Title:</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} />
-        <Text>Description:</Text>
-        <TextInput
+          keyboardType="numeric"
           style={styles.input}
+          theme={inputTheme}
+        />
+        <TextInput
+          label="Title"
+          mode="outlined"
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+          theme={inputTheme}
+        />
+        <TextInput
+          label="Description"
+          mode="outlined"
           value={description}
           onChangeText={setDescription}
+          style={styles.input}
+          theme={inputTheme}
         />
-        <Text>Category:</Text>
-        <Picker
-          selectedValue={category}
-          onValueChange={itemValue => setCategory(itemValue)}>
-          <Picker.Item label="Traffic accident" value="Traffic accident" />
-          <Picker.Item label="Traffic jam" value="Traffic jam" />
-          <Picker.Item label="Natural disaster" value="Natural disaster" />
-          <Picker.Item
-            label="High Pedestrian Activity"
-            value="High Pedestrian Activity"
-          />
-          <Picker.Item label="Construction Zone" value="Construction Zone" />
-          <Picker.Item
-            label="Dangerous road condition"
-            value="Dangerous road condition"
-          />
-          <Picker.Item label="Other" value="Other" />
-        </Picker>
+
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={category}
+            onValueChange={setCategory}
+            style={styles.picker}
+          >
+            <Picker.Item label="Traffic accident" value="Traffic accident" />
+            <Picker.Item label="Traffic jam" value="Traffic jam" />
+            <Picker.Item label="Natural disaster" value="Natural disaster" />
+            <Picker.Item label="High Pedestrian Activity" value="High Pedestrian Activity" />
+            <Picker.Item label="Construction Zone" value="Construction Zone" />
+            <Picker.Item label="Dangerous road condition" value="Dangerous road condition" />
+            <Picker.Item label="Other" value="Other" />
+          </Picker>
+        </View>
+
         <Button title="Update Pin" onPress={handleUpdate} />
       </View>
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  input: {
+    marginBottom: 16,
+    backgroundColor: 'white',
+  },
+  label: {
+    marginBottom: 6,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  pickerWrapper: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+  },
+});
