@@ -8,15 +8,25 @@ import { MMKV } from 'react-native-mmkv';
 import SettingsScreen from './components/SettingsScreen';
 import { LoginScreen } from './components/LoginScreen';
 import messaging from '@react-native-firebase/messaging';
-import {Alert, PermissionsAndroid} from 'react-native';
+import {Alert, PermissionsAndroid, StyleSheet, View} from 'react-native';
 import { RegisterScreen } from './components/RegisterScreen';
 import { MapScreen } from './components/MapScreen';
 import PinDetailScreen from './components/PinDetailScreen';
 import SplashScreen from './components/SplashScreen';
 import OnboardingScreen from './components/OnboardingScreen';
 import { EditPinScreen } from './components/EditPinScreen';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
+const styles = StyleSheet.create({
+  activeIconContainer: {
+    width: 48,
+    height: 36,
+    backgroundColor: '#b3e5fc', 
+    borderRadius: 10,           
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -41,18 +51,83 @@ function MapStack() {
     </Stack.Navigator>
   );
 }
-
-
 function TabNav() {
   return (
-    <Tab.Navigator >
-      <Tab.Screen name="Map" component={MapStack}  options={{ headerShown: false }} />   
-      <Tab.Screen name="Pin list" component={PinStack}  options={{ headerShown: false }} />
-      <Tab.Screen name="Add pin" component={AddPinScreen}  options={{ headerShown: false }} />
-      <Tab.Screen name="Settings" component={SettingsScreen}  options={{ headerShown: false }}/>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarShowLabel: true,
+        tabBarStyle: { height: 60, paddingBottom: 5 },
+      }}
+    >
+      <Tab.Screen
+        name="Map"
+        component={MapStack}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconContainer : null}>
+              <MaterialCommunityIcons
+                name="map-outline"
+                color={focused ? '#000' : color}
+                size={focused ? 24 : size} 
+              />
+            </View>
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Pin list"
+        component={PinStack}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconContainer : null}>
+              <MaterialCommunityIcons
+                name="format-list-bulleted"
+                color={focused ? '#000' : color}
+                size={size}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Add pin"
+        component={AddPinScreen}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconContainer : null}>
+              <MaterialCommunityIcons
+                name="plus-box-outline"
+                color={focused ? '#000' : color}
+                size={size}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconContainer : null}>
+              <MaterialCommunityIcons
+                name="cog-outline"
+                color={focused ? '#000' : color}
+                size={size}
+              />
+            </View>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
+
 
 const App: React.FC = () => {
 
