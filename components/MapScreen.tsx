@@ -8,6 +8,9 @@ import {
   Easing,
   Text,
   Image,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import firestore from '@react-native-firebase/firestore';
@@ -72,9 +75,9 @@ const getNearestPinWithinRadius = (
   }
 
   if (nearest) {
-    console.log(`✅ Nearest pin in range: "${nearest.title}" (${Math.round(minDistance)}m)`);
+    console.log(`Nearest pin in range: "${nearest.title}" (${Math.round(minDistance)}m)`);
   } else {
-    console.log('❌ No pins found within 1km radius.');
+    console.log('No pins found within 1km radius.');
   }
 
   return nearest;
@@ -87,6 +90,36 @@ const MapScreen = () => {
   const [activePin, setActivePin] = useState<Pin | null>(null);
   const notificationShown = useRef<string | null>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (
+        _: GestureResponderEvent,
+        gestureState: PanResponderGestureState
+      ) => Math.abs(gestureState.dx) > 10,
+      onPanResponderMove: Animated.event(
+        [null, { dx: translateX }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_evt, gestureState) => {
+        if (Math.abs(gestureState.dx) > 120) {
+          Animated.timing(translateX, {
+            toValue: gestureState.dx > 0 ? 500 : -500,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => setBannerVisible(false));
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -124,8 +157,8 @@ const MapScreen = () => {
               category: pin.category,
               street: pin.street,
               city: pin.city,
-              latitude: Number(pin.latitude), // ✅ ensure numeric
-              longitude: Number(pin.longitude), // ✅ ensure numeric
+              latitude: Number(pin.latitude),
+              longitude: Number(pin.longitude),
               userId: pin.userId,
               review: pin.review,
               createdAt: pin.createdAt?.toDate() || new Date(),
@@ -155,17 +188,20 @@ const MapScreen = () => {
             if (notificationShown.current !== nearest.id) {
               notifyNearestEvent(nearest);
               notificationShown.current = nearest.id;
+              setBannerVisible(true);
+              translateX.setValue(0);
             }
           } else {
             setActivePin(null);
             if (notificationShown.current) {
               cancelNearestEventNotification();
               notificationShown.current = null;
+              setBannerVisible(false);
             }
           }
         })
         .catch(() => {});
-    }, 5000); // ⏱️ Reduced for testing
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [pins]);
@@ -232,8 +268,9 @@ const MapScreen = () => {
 
   return (
     <View style={styles.container}>
-      {activePin && (
+      {activePin && bannerVisible && (
         <Animated.View
+          {...panResponder.panHandlers}
           style={[
             styles.flashBanner,
             {
@@ -241,6 +278,7 @@ const MapScreen = () => {
                 inputRange: [0, 1],
                 outputRange: [0.4, 1],
               }),
+              transform: [{ translateX }],
             },
           ]}
         >
