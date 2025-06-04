@@ -8,12 +8,15 @@ import {
   Text,
 } from 'react-native';
 import Swiper from 'react-native-swiper';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const { width, height } = Dimensions.get('window');
 
 export const OnboardingScreen: React.FC<any> = ({ navigation }) => {
   const swiperRef = useRef<any>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
 
   const handleNext = () => {
     if (currentIndex < 2) {
@@ -23,8 +26,12 @@ export const OnboardingScreen: React.FC<any> = ({ navigation }) => {
     }
   };
 
-  const finishOnboarding = () => {
-    navigation.replace('LoginScreen');
+  const finishOnboarding =async () => {
+    const uid = auth().currentUser?.uid;
+          await firestore().collection('users').doc(uid).update({
+        onboarding: false,
+      });
+      navigation.replace('TabNav');
   };
 
   return (

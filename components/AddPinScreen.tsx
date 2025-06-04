@@ -18,7 +18,11 @@ import type { RootStackParamList } from '../navigation/types';
 
 export const getCoordsFromAddress = async (address: string) => {
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-  const response = await fetch(url);
+    const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'MyPinApp/1.0 (me@example.com)',
+    },
+  });
   const data = await response.json();
 
   if (data.length > 0) {
