@@ -4,13 +4,6 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 export const OnboardingScreen: React.FC<any> = ({navigation}) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('LoginScreen');
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [navigation]);
 
   const handleSkipOnboarding = async () => {
     const uid = auth().currentUser?.uid;

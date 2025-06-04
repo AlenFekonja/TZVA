@@ -59,9 +59,16 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
     navigation.navigate('PinEdit', { pin });
   };
 
-  const filteredPins = pins.filter(pin =>
-    pin.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPins = pins.filter(pin => {
+    if (!searchTerm.trim()) return true;
+    const lowerSearch = searchTerm.toLowerCase();
+    return (
+      pin.title?.toLowerCase().includes(lowerSearch) ||
+      pin.description?.toLowerCase().includes(lowerSearch) ||
+      pin.city?.toLowerCase().includes(lowerSearch) ||
+      pin.review?.toLowerCase().includes(lowerSearch)
+    );
+  });
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -134,6 +141,18 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
                 numberOfLines={1}
               >
                 {item.description}
+              </Text>
+                            <Text
+                style={{ fontSize: 12, color: '#666' }}
+                numberOfLines={1}
+              >
+                {item.city}
+              </Text>
+                                          <Text
+                style={{ fontSize: 12, color: '#666' }}
+                numberOfLines={1}
+              >
+                {item.review}
               </Text>
             </View>
             <TouchableOpacity

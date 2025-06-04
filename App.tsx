@@ -15,7 +15,7 @@ import PinDetailScreen from './components/PinDetailScreen';
 import SettingsScreen from './components/SettingsScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { RegisterScreen } from './components/RegisterScreen';
-import MapScreen from './components/MapScreen'; // ✅ Make sure it's a default export
+import MapScreen from './components/MapScreen';
 import SplashScreen from './components/SplashScreen';
 import OnboardingScreen from './components/OnboardingScreen';
 

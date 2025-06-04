@@ -5,8 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Button,
+  ToastAndroid,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import auth from '@react-native-firebase/auth';
 
 const SettingsScreen: React.FC<any> = ({ navigation }) => {
   const settings = [
@@ -19,18 +22,6 @@ const SettingsScreen: React.FC<any> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#0f1b3e" />
-        </TouchableOpacity>
-        <View style={styles.titleWrapper}>
-          <Text style={styles.headerTitle}>Settings</Text>
-        </View>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.centeredContent}>
           {settings.map((item, index) => (
@@ -49,6 +40,14 @@ const SettingsScreen: React.FC<any> = ({ navigation }) => {
               <View style={styles.divider} />
             </TouchableOpacity>
           ))}
+          <Button
+            title="Logout"
+            onPress={async () => {
+              await auth().signOut();
+              ToastAndroid.show('Logged out!', ToastAndroid.SHORT);
+              navigation.replace('LoginScreen');
+            }}
+          />
         </View>
       </ScrollView>
     </View>
