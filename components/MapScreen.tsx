@@ -20,6 +20,7 @@ import {
   notifyNearestEvent,
   cancelNearestEventNotification,
 } from './NotificationService';
+import { storage } from './storage'; 
 
 type Coordinates = {
   latitude: number;
@@ -65,19 +66,10 @@ const getNearestPinWithinRadius = (
 
   for (const pin of pins) {
     const distance = getDistance(userLocation, pin);
-    console.log(`Checking pin "${pin.title}" at [${pin.latitude}, ${pin.longitude}]`);
-    console.log(`Distance to user: ${Math.round(distance)} meters`);
-
     if (distance <= maxDistanceMeters && distance < minDistance) {
       nearest = pin;
       minDistance = distance;
     }
-  }
-
-  if (nearest) {
-    console.log(`Nearest pin in range: "${nearest.title}" (${Math.round(minDistance)}m)`);
-  } else {
-    console.log('No pins found within 1km radius.');
   }
 
   return nearest;
@@ -100,10 +92,9 @@ const MapScreen = () => {
         _: GestureResponderEvent,
         gestureState: PanResponderGestureState
       ) => Math.abs(gestureState.dx) > 10,
-      onPanResponderMove: Animated.event(
-        [null, { dx: translateX }],
-        { useNativeDriver: false }
-      ),
+      onPanResponderMove: Animated.event([null, { dx: translateX }], {
+        useNativeDriver: false,
+      }),
       onPanResponderRelease: (_evt, gestureState) => {
         if (Math.abs(gestureState.dx) > 120) {
           Animated.timing(translateX, {
@@ -233,8 +224,20 @@ const MapScreen = () => {
     );
   }
 
+  const radiusEnabled = storage.getBoolean('radiusEnabled') ?? true;
+
   const pinsData = JSON.stringify(pins);
   const { latitude, longitude } = location;
+
+  const circleCode = radiusEnabled
+    ? `
+      L.circle([${latitude}, ${longitude}], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.2,
+        radius: 1000
+      }).addTo(map);`
+    : '';
 
   const mapHtml = `
     <html><head>
@@ -246,13 +249,7 @@ const MapScreen = () => {
         var map = L.map('map').setView([${latitude}, ${longitude}], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.marker([${latitude}, ${longitude}]).addTo(map).bindPopup("You are here").openPopup();
-        L.circle([${latitude}, ${longitude}], {
-          color: 'red',
-          fillColor: '#f03',
-          fillOpacity: 0.2,
-          radius: 1000
-        }).addTo(map);
-
+        ${circleCode}
         function addMarkers(pins) {
           pins.forEach(pin => {
             let html = '<b>' + pin.title + '</b><br>' + pin.description;

@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Alert,FlatList,StatusBar,Text,TouchableOpacity,View,Image,TextInput } from 'react-native';
+import {
+  FlatList,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+  TextInput,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Pin } from './Type';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Toast from 'react-native-toast-message';
 
-export const PinListScreen: React.FC<any> = ({ navigation }) => {
+export const PinListScreen: React.FC<any> = ({ navigation, route }) => {
   const [pins, setPins] = useState<Pin[]>([]);
-  const userId = auth().currentUser?.email;
   const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+
+  const userId = auth().currentUser?.email;
 
   useEffect(() => {
     if (!userId) return;
@@ -41,18 +52,45 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
     return () => unsubscribe();
   }, [userId]);
 
-  const handleDeletePin = (pinId: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this pin?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        onPress: async () => {
-          await firestore().collection('pins').doc(pinId).delete();
-          setPins(prev => prev.filter(pin => pin.id !== pinId));
-        },
-        style: 'destructive',
-      },
-    ]);
+  useEffect(() => {
+    if (route?.params?.updateStatus) {
+      if (route.params.updateStatus === 'success') {
+        Toast.show({
+          type: 'success',
+          text1: 'Pin updated',
+          text2: 'Your changes were saved successfully.',
+          position: 'top'
+        });
+      } else if (route.params.updateStatus === 'error') {
+        Toast.show({
+          type: 'error',
+          text1: 'Update failed',
+          text2: 'Something went wrong while saving.',
+          position: 'top'
+        });
+      }
+      navigation.setParams({ updateStatus: null });
+    }
+  }, [route?.params?.updateStatus]);
+
+  const handleDeletePin = async (pinId: string) => {
+    try {
+      await firestore().collection('pins').doc(pinId).delete();
+      setPins(prev => prev.filter(pin => pin.id !== pinId));
+      Toast.show({
+        type: 'success',
+        text1: 'Pin deleted',
+        text2: 'The pin was successfully removed.',
+        position: 'top'
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Delete failed',
+        text2: 'Unable to delete the pin.',
+        position: 'top'
+      });
+    }
   };
 
   const handleEditPin = (pin: Pin) => {
@@ -60,14 +98,19 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const filteredPins = pins.filter(pin => {
-    if (!searchTerm.trim()) return true;
     const lowerSearch = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
+      !searchTerm.trim() ||
       pin.title?.toLowerCase().includes(lowerSearch) ||
       pin.description?.toLowerCase().includes(lowerSearch) ||
       pin.city?.toLowerCase().includes(lowerSearch) ||
-      pin.review?.toLowerCase().includes(lowerSearch)
-    );
+      pin.street?.toLowerCase().includes(lowerSearch) ||
+      pin.review?.toLowerCase().includes(lowerSearch);
+
+    const matchesFilter =
+      filter === 'all' || pin.review?.toLowerCase() === filter;
+
+    return matchesSearch && matchesFilter;
   });
 
   return (
@@ -87,13 +130,32 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
           }}
         >
           <TextInput
-            placeholder="Search by entering title, city or street"
+            placeholder="Search by title, city, or street"
             value={searchTerm}
             onChangeText={setSearchTerm}
             style={{ flex: 1, height: 40 }}
           />
           <Icon name="magnify" size={20} color="#555" />
         </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 }}>
+        {['all', 'approved', 'rejected'].map(value => (
+          <TouchableOpacity
+            key={value}
+            onPress={() => setFilter(value as typeof filter)}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              backgroundColor: filter === value ? '#007AFF' : '#eee',
+              borderRadius: 20,
+            }}
+          >
+            <Text style={{ color: filter === value ? '#fff' : '#333', fontWeight: 'bold' }}>
+              {value.charAt(0).toUpperCase() + value.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <FlatList
@@ -124,52 +186,32 @@ export const PinListScreen: React.FC<any> = ({ navigation }) => {
               resizeMode="cover"
             />
             <View style={{ flex: 1 }}>
-              <Text
-                style={{ fontWeight: 'bold', fontSize: 14 }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontWeight: 'bold', fontSize: 14 }} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Text
-                style={{ fontSize: 12, color: '#333' }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontSize: 12, color: '#333' }} numberOfLines={1}>
                 {item.street}
               </Text>
-              <Text
-                style={{ fontSize: 12, color: '#666' }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontSize: 12, color: '#666' }} numberOfLines={1}>
                 {item.description}
               </Text>
-                            <Text
-                style={{ fontSize: 12, color: '#666' }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontSize: 12, color: '#666' }} numberOfLines={1}>
                 {item.city}
               </Text>
-                                          <Text
-                style={{ fontSize: 12, color: '#666' }}
-                numberOfLines={1}
-              >
-                {item.review}
+              <Text style={{ fontSize: 12, color: '#666' }} numberOfLines={1}>
+                Review: {item.review || 'pending'}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => handleEditPin(item)}
-              style={{ padding: 8 }}
-            >
+            <TouchableOpacity onPress={() => handleEditPin(item)} style={{ padding: 8 }}>
               <Icon name="pencil-outline" size={20} color="#004080" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleDeletePin(item.id)}
-              style={{ padding: 8 }}
-            >
+            <TouchableOpacity onPress={() => handleDeletePin(item.id)} style={{ padding: 8 }}>
               <Icon name="delete-outline" size={20} color="#B00020" />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
       />
+      <Toast />
     </GestureHandlerRootView>
   );
 };

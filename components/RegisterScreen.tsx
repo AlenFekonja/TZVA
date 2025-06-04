@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ToastAndroid,
   ScrollView,
   Dimensions,
 } from 'react-native';
@@ -13,6 +12,7 @@ import Svg, { Path } from 'react-native-svg';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { TextInput } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -24,12 +24,22 @@ export const RegisterScreen: React.FC<any> = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!email || !username || !password || !confirmPassword) {
-      ToastAndroid.show('Please fill in all fields.', ToastAndroid.SHORT);
+      Toast.show({
+        type: 'error',
+        text1: 'Incomplete Form',
+        text2: 'Please fill in all fields.',
+        position: 'top',
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      ToastAndroid.show('Passwords do not match.', ToastAndroid.SHORT);
+      Toast.show({
+        type: 'error',
+        text1: 'Password Mismatch',
+        text2: 'Passwords do not match.',
+        position: 'top',
+      });
       return;
     }
 
@@ -45,11 +55,22 @@ export const RegisterScreen: React.FC<any> = ({ navigation }) => {
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
 
-      ToastAndroid.show('Registration successful!', ToastAndroid.SHORT);
+      Toast.show({
+        type: 'success',
+        text1: 'Registration Successful',
+        text2: 'Welcome aboard!',
+        position: 'top',
+      });
+
       navigation.replace('LoginScreen');
     } catch (error: any) {
       console.error(error);
-      ToastAndroid.show('Registration failed. Try again.', ToastAndroid.SHORT);
+      Toast.show({
+        type: 'error',
+        text1: 'Registration Failed',
+        text2: 'Please try again.',
+        position: 'top',
+      });
     }
   };
 

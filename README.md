@@ -90,26 +90,27 @@ Aplikacija je posebej koristna za:
 ### Kolekcija: `users`
 ```json
 {
+  "id": "abc123",
   "email": "user@example.com",
   "username": "Janez",
   "admin": false,
-  "onboarding": true,
-  "createdAt": <timestamp>
+  "onBoarding": true,
+  "createdAt": "2024-06-04T12:00:00.000Z"
 }
 ```
 ### Kolekcija: `pin`
 ```json
 {
-  "title": "Fallen tree on road",         
-  "description": "Large tree blocking both lanes", 
-  "category": "Natural disaster",         
-  "street": "Glavna cesta 123",           
-  "city": "Ljubljana",                    
-  "longitude": "14.5058",                 
-  "latitude": "46.0569",                  
-  "userId": "user@example.com",           
-  "review": "pending",                   
-  "image": "<url ali base64 string>",     
-  "createdAt": <timestamp>,               
-  "updatedAt": <timestamp>  
+  "id": "pin001",
+  "title": "Fallen tree on road",
+  "description": "Large tree blocking both lanes",
+  "category": "Natural disaster",
+  "street": "Glavna cesta 123",
+  "city": "Ljubljana",
+  "userId": "user@example.com",
+  "longitude": "14.5058",
+  "latitude": "46.0569",
+  "review": "pending",
+  "image": "<base64 string or image URL>",
+  "createdAt": "2024-06-04T12:00:00.000Z"
 }

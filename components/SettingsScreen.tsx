@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Button,
-  ToastAndroid,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import auth from '@react-native-firebase/auth';
+import { Switch } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
+import { storage } from './storage';
 
 const SettingsScreen: React.FC<any> = ({ navigation }) => {
   const settings = [
@@ -19,6 +21,43 @@ const SettingsScreen: React.FC<any> = ({ navigation }) => {
     { icon: 'bullhorn-outline', label: 'Emergency contact' },
     { icon: 'pencil-outline', label: 'Personalization' },
   ];
+
+  const [radiusEnabled, setRadiusEnabled] = useState<boolean>(true);
+
+  useEffect(() => {
+    const saved = storage.getBoolean('radiusEnabled');
+    if (saved === false) {
+      setRadiusEnabled(false);
+    }
+  }, []);
+
+  const toggleRadius = () => {
+    const newValue = !radiusEnabled;
+    setRadiusEnabled(newValue);
+    storage.set('radiusEnabled', newValue);
+
+    Toast.show({
+      type: newValue ? 'success' : 'error',
+      text1: newValue ? 'Radius Enabled' : 'Radius Disabled',
+      text2: newValue
+        ? 'You will now see the 1km alert circle.'
+        : 'The alert radius is hidden.',
+      position: 'top',
+    });
+  };
+
+  const handleLogout = async () => {
+    await auth().signOut();
+
+    Toast.show({
+      type: 'success',
+      text1: 'Logged out successfully',
+      text2: 'You have been signed out.',
+      position: 'top',
+    });
+
+    navigation.replace('LoginScreen');
+  };
 
   return (
     <View style={styles.container}>
@@ -34,20 +73,29 @@ const SettingsScreen: React.FC<any> = ({ navigation }) => {
                   style={styles.settingIcon}
                 />
                 <Text style={styles.settingLabel}>{item.label}</Text>
-                {/* for symmetry, use a hidden icon instead of spacer */}
                 <View style={styles.settingIcon} />
               </View>
               <View style={styles.divider} />
             </TouchableOpacity>
           ))}
-          <Button
-            title="Logout"
-            onPress={async () => {
-              await auth().signOut();
-              ToastAndroid.show('Logged out!', ToastAndroid.SHORT);
-              navigation.replace('LoginScreen');
-            }}
-          />
+
+          <View
+            style={[
+              styles.settingItem,
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              },
+            ]}
+          >
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000' }}>
+              Show 1km Alert Radius
+            </Text>
+            <Switch value={radiusEnabled} onValueChange={toggleRadius} />
+          </View>
+          <View style={styles.divider} />
+          <Button title="Logout" onPress={handleLogout} />
         </View>
       </ScrollView>
     </View>
@@ -61,36 +109,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#f5f5f5',
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-  },
-  backButton: {
-    backgroundColor: '#E6EEF5',
-    borderRadius: 24,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    marginRight: 40,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#0f1b3e',
-  },
   scrollContainer: {
     paddingVertical: 20,
+    marginTop: 50
   },
   centeredContent: {
     width: '100%',

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   View,
   StyleSheet,
@@ -11,6 +10,7 @@ import { TextInput } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import Toast from 'react-native-toast-message';
 import TakePicture from './TakePicture';
 import { Pin } from './Type';
 import { getCoordsFromAddress, isInSlovenia } from './AddPinScreen';
@@ -30,8 +30,8 @@ export const EditPinScreen: React.FC<any> = ({ route, navigation }) => {
 
   const inputTheme = {
     colors: {
-      primary: '#000', // active border color
-      outline: '#000', // inactive border color
+      primary: '#000',
+      outline: '#000',
       text: '#000',
       placeholder: '#777',
     },
@@ -94,7 +94,12 @@ export const EditPinScreen: React.FC<any> = ({ route, navigation }) => {
 
   const handleUpdate = async () => {
     if (title === '' || description === '' || street === '' || city === '') {
-      Alert.alert('Empty input fields', 'Please enter all required fields.');
+      Toast.show({
+        type: 'error',
+        text1: 'Missing fields',
+        text2: 'Please enter all required fields.',
+        position: 'top',
+      });
       return;
     }
 
@@ -102,13 +107,23 @@ export const EditPinScreen: React.FC<any> = ({ route, navigation }) => {
       const address = `${street},${city},Slovenia`;
       const coordinatesFetched = await handleGetCoordinates(address);
       if (!coordinatesFetched) {
-        Alert.alert('Invalid Address', 'Could not find coordinates.');
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid address',
+          text2: 'Could not find coordinates.',
+          position: 'top',
+        });
         return;
       }
     }
 
     if (!isInSlovenia(parseFloat(latitude), parseFloat(longitude))) {
-      Alert.alert('Invalid Address', 'Coordinates are outside Slovenia.');
+      Toast.show({
+        type: 'error',
+        text1: 'Out of range',
+        text2: 'Coordinates are outside Slovenia.',
+        position: 'top',
+      });
       return;
     }
 
@@ -127,10 +142,22 @@ export const EditPinScreen: React.FC<any> = ({ route, navigation }) => {
 
     try {
       await firestore().collection('pins').doc(pin.id).update(updatedPin);
-      Alert.alert('Pin updated successfully');
+      Toast.show({
+        type: 'success',
+        text1: 'Pin updated',
+        text2: 'Your changes were saved.',
+        position: 'top',
+      });
+      navigation.navigate('PinListTab', { updateStatus: 'success' });
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error updating pin');
+      Toast.show({
+        type: 'error',
+        text1: 'Update failed',
+        text2: 'Could not save changes.',
+        position: 'top',
+      });
+      navigation.navigate('PinListTab', { updateStatus: 'error' });
     }
   };
 

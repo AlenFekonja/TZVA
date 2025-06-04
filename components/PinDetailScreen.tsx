@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { Pin } from './Type';
+import Toast from 'react-native-toast-message';
 
 export const PinDetailScreen: React.FC<any> = ({ route, navigation }) => {
   const initialPin: Pin = route.params.pin;
@@ -36,30 +36,48 @@ export const PinDetailScreen: React.FC<any> = ({ route, navigation }) => {
     fetchUserData();
   }, []);
 
-  const handleDeletePin = (pinId: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this pin?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        onPress: async () => {
-          try {
-            await firestore().collection('pins').doc(pinId).delete();
-            navigation.goBack();
-          } catch (error) {
-            console.error('Error deleting pin: ', error);
-          }
-        },
-        style: 'destructive',
-      },
-    ]);
+  const handleDeletePin = async (pinId: string) => {
+    try {
+      await firestore().collection('pins').doc(pinId).delete();
+      Toast.show({
+        type: 'success',
+        text1: 'Pin deleted',
+        text2: 'The pin has been successfully removed.',
+        position: 'top',
+      });
+      navigation.goBack();
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Delete failed',
+        text2: 'Could not delete the pin.',
+        position: 'top',
+      });
+    }
   };
 
   const handlePinStatus = async (pinId: string, review: string) => {
     try {
       await firestore().collection('pins').doc(pinId).update({ review });
       setPin(prev => ({ ...prev, review }));
+
+      Toast.show({
+        type: review === 'approved' ? 'success' : 'info',
+        text1: review === 'approved' ? 'Pin approved' : 'Pin rejected',
+        text2: review === 'approved'
+          ? 'The pin has been approved.'
+          : 'The pin has been rejected.',
+        position: 'top',
+      });
+
+      navigation.goBack();
     } catch (error) {
-      console.error('Error updating pin status: ', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Update failed',
+        text2: 'Could not update pin status.',
+        position: 'top',
+      });
     }
   };
 
@@ -114,6 +132,8 @@ export const PinDetailScreen: React.FC<any> = ({ route, navigation }) => {
           </>
         )}
       </View>
+
+      <Toast />
     </ScrollView>
   );
 };
@@ -184,7 +204,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   approveButton: {
-    backgroundColor: '#2196F3', // solid blue
+    backgroundColor: '#2196F3',
   },
   rejectButton: {
     borderWidth: 1.5,

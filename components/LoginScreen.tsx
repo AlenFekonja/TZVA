@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ToastAndroid,
   ScrollView,
   Dimensions,
 } from 'react-native';
@@ -13,6 +12,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import Svg, { Path } from 'react-native-svg';
 import { TextInput } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -43,14 +43,28 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
     if (email && password) {
       try {
         await auth().signInWithEmailAndPassword(email, password);
-        ToastAndroid.show('Login successful!', ToastAndroid.SHORT);
-        navigation.replace(isOnboarding ? 'OnboardingScreen' : 'TabNav');
+        Toast.show({
+                  type: 'success',
+                  text1: 'Login successful!',
+                  text2: 'Welcome to Varna Pot.',
+                  position: 'top',
+                });        
+              navigation.replace(isOnboarding ? 'OnboardingScreen' : 'TabNav');
       } catch (error) {
-        ToastAndroid.show('Login failed. Please check your credentials.', ToastAndroid.SHORT);
-      }
+      Toast.show({
+                type: 'error',
+                text1: 'Login failed',
+                text2: 'Please check your credentials.',
+                position: 'top'
+              });
+            }
     } else {
-      ToastAndroid.show('Please fill in both fields.', ToastAndroid.SHORT);
-    }
+      Toast.show({
+              type: 'info',
+              text1: 'Missing fields',
+              text2: 'Please fill in both email and password.',
+              position: 'top'
+            });    }
   };
 
   return (
