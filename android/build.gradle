@@ -30,7 +30,14 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force 'androidx.core:core:1.15.0'
+            force 'com.google.protobuf:protobuf-javalite:3.25.5'
+            eachDependency { details ->
+                if (details.requested.group == 'com.google.protobuf') {
+                    details.useVersion '3.25.5'
+                }
+            }
         }
+
     }
 }
 

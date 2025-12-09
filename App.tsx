@@ -84,12 +84,13 @@ function TabNav() {
         }}
       />
       <Tab.Screen
-        name="PinListTab"
+        name="PinList"
         component={PinStack}
         options={{
+            tabBarAccessibilityLabel: "pinListTab",
           headerShown: false,
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={focused ? styles.activeIconContainer : null}>
+            <View style={focused ? styles.activeIconContainer : null} testID="pinListTab">
               <MaterialCommunityIcons
                 name="format-list-bulleted"
                 color={focused ? '#000' : color}
@@ -100,12 +101,14 @@ function TabNav() {
         }}
       />
       <Tab.Screen
+
         name="AddPin"
         component={AddPinScreen}
         options={{
+            tabBarAccessibilityLabel: "addPinTab",
           headerShown: false,
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={focused ? styles.activeIconContainer : null}>
+            <View   testID="addPinTab" style={focused ? styles.activeIconContainer : null} >
               <MaterialCommunityIcons
                 name="plus-box-outline"
                 color={focused ? '#000' : color}

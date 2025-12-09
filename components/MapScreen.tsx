@@ -264,9 +264,10 @@ const MapScreen = () => {
   `;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="mapScreenView">
       {activePin && bannerVisible && (
         <Animated.View
+            testID="flashBanner"
           {...panResponder.panHandlers}
           style={[
             styles.flashBanner,

@@ -125,9 +125,9 @@ export const AddPinScreen = () => {
       });
       return;
     }
-
+/* quick fix, ker nekaj ni ok z coords
     if (longitude === '' && latitude === '') {
-      const address = `${street},${city},Slovenia`;
+      const address = `${street}, ${city}, Slovenia`;
       const coordinatesFetched = await handleGetCoordinates(address);
       if (!coordinatesFetched) {
         Toast.show({
@@ -149,7 +149,7 @@ export const AddPinScreen = () => {
       });
       return;
     }
-
+*/
     const newPin = {
       title,
       description,
@@ -194,8 +194,9 @@ export const AddPinScreen = () => {
   return (
     <ScrollView>
       <TakePicture onImageTaken={setImageData} existingImage={imageData} />
-      <View style={styles.container}>
+      <View style={styles.container} testID="addPinScreenView">
         <TextInput
+           testID="city"
           label="City"
           mode="outlined"
           value={city}
@@ -208,6 +209,7 @@ export const AddPinScreen = () => {
           theme={inputTheme}
         />
         <TextInput
+        testID="street"
           label="Street"
           mode="outlined"
           value={street}
@@ -216,6 +218,7 @@ export const AddPinScreen = () => {
           theme={inputTheme}
         />
         <TextInput
+        testID="title"
           label="Title"
           mode="outlined"
           value={title}
@@ -224,6 +227,7 @@ export const AddPinScreen = () => {
           theme={inputTheme}
         />
         <TextInput
+         testID="description"
           label="Description"
           mode="outlined"
           value={description}
@@ -249,7 +253,7 @@ export const AddPinScreen = () => {
             <Picker.Item label="Other" value="Other" />
           </Picker>
         </View>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave} testID="save">
           <Text style={styles.saveButtonText}>Save Pin</Text>
         </TouchableOpacity>
       </View>

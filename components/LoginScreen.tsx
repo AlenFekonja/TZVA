@@ -76,6 +76,7 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
             <Text style={styles.title}>VARNA POT</Text>
 
             <TextInput
+              testID="email"
               mode="outlined"
               label="G-mail"
               keyboardType="email-address"
@@ -86,6 +87,7 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
               theme={{ colors: { primary: '#104F8D' } }}
             />
             <TextInput
+              testID="password"
               mode="outlined"
               label="Password"
               secureTextEntry
@@ -96,7 +98,7 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
               theme={{ colors: { primary: '#104F8D' } }}
             />
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin} testID="loginButton">
               <Text style={styles.loginButtonText}>LOG IN</Text>
             </TouchableOpacity>
 

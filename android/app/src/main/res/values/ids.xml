@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="email" type="id"/>
+    <item name="password" type="id"/>
+    <item name="loginButton" type="id"/>
+    <item name="mapScreenView" type="id"/>
+    <item name="flashBanner" type="id"/>
+    <item name="addPinTab" type="id"/>
+    <item name="addPinScreenView" type="id"/>
+    <item name="city" type="id"/>
+    <item name="street" type="id"/>
+    <item name="title" type="id"/>
+    <item name="description" type="id"/>
+    <item name="save" type="id"/>
+    <item name="pinListTab" type="id"/>
+    <item name="search" type="id"/>
+    <item name="pinList" type="id"/>
+
+</resources>

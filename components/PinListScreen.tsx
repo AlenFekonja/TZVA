@@ -130,6 +130,7 @@ export const PinListScreen: React.FC<any> = ({ navigation, route }) => {
           }}
         >
           <TextInput
+            testID="search"
             placeholder="Search by title, city, or street"
             value={searchTerm}
             onChangeText={setSearchTerm}
@@ -159,6 +160,7 @@ export const PinListScreen: React.FC<any> = ({ navigation, route }) => {
       </View>
 
       <FlatList
+        testID="pinList"
         data={filteredPins}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 100 }}
